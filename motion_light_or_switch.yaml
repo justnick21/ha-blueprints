@@ -6,14 +6,14 @@ blueprint:
   source_url: https://github.com/justnick21/ha-blueprints/edit/main/motion_light_or_switch.yaml
   input:
     motion_entity:
-      name: Motion Sensor
+      name: Motion or Occupancy Sensor
       selector:
         entity:
           filter:
             - domain: binary_sensor
-              device_class: occupancy
-            - domain: binary_sensor
               device_class: motion
+            - domain: binary_sensor
+              device_class: occupancy
     target_entity:
       name: Light or Switch
       selector:
@@ -42,24 +42,9 @@ trigger:
   to: "on"
 
 action:
-  - alias: "Set target domain"
-    variables:
-      domain: "{{ expand(target_entity)[0].domain }}"
-
-  - alias: "Turn on the device"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ domain == 'light' }}"
-        sequence:
-          - service: light.turn_on
-            target: !input target_entity
-      - conditions:
-          - condition: template
-            value_template: "{{ domain == 'switch' }}"
-        sequence:
-          - service: switch.turn_on
-            target: !input target_entity
+  - alias: "Turn on the device (light or switch)"
+    service: homeassistant.turn_on
+    target: !input target_entity
 
   - alias: "Wait until motion stops"
     wait_for_trigger:
@@ -68,20 +53,9 @@ action:
       from: "on"
       to: "off"
 
-  - alias: "Wait for configured delay"
+  - alias: "Wait the configured delay"
     delay: !input no_motion_wait
 
-  - alias: "Turn off the device"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ domain == 'light' }}"
-        sequence:
-          - service: light.turn_off
-            target: !input target_entity
-      - conditions:
-          - condition: template
-            value_template: "{{ domain == 'switch' }}"
-        sequence:
-          - service: switch.turn_off
-            target: !input target_entity
+  - alias: "Turn off the device (light or switch)"
+    service: homeassistant.turn_off
+    target: !input target_entity
