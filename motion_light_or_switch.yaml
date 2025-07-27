@@ -2,8 +2,8 @@ blueprint:
   name: Motion-activated Light or Switch
   description: Turn on a light or switch when motion is detected, and turn it off after a delay.
   domain: automation
-  author: your_username
-  source_url: https://github.com/your_username/home-assistant-blueprints/blob/main/motion_light_or_switch.yaml
+  author: justnick21
+  source_url: https://github.com/justnick21/ha-blueprints/edit/main/motion_light_or_switch.yaml
   input:
     motion_entity:
       name: Motion Sensor
@@ -42,17 +42,21 @@ trigger:
   to: "on"
 
 action:
+  - alias: "Set target domain"
+    variables:
+      domain: "{{ expand(target_entity)[0].domain }}"
+
   - alias: "Turn on the device"
     choose:
       - conditions:
           - condition: template
-            value_template: "{{ expand(!input target_entity)[0].domain == 'light' }}"
+            value_template: "{{ domain == 'light' }}"
         sequence:
           - service: light.turn_on
             target: !input target_entity
       - conditions:
           - condition: template
-            value_template: "{{ expand(!input target_entity)[0].domain == 'switch' }}"
+            value_template: "{{ domain == 'switch' }}"
         sequence:
           - service: switch.turn_on
             target: !input target_entity
@@ -71,13 +75,13 @@ action:
     choose:
       - conditions:
           - condition: template
-            value_template: "{{ expand(!input target_entity)[0].domain == 'light' }}"
+            value_template: "{{ domain == 'light' }}"
         sequence:
           - service: light.turn_off
             target: !input target_entity
       - conditions:
           - condition: template
-            value_template: "{{ expand(!input target_entity)[0].domain == 'switch' }}"
+            value_template: "{{ domain == 'switch' }}"
         sequence:
           - service: switch.turn_off
             target: !input target_entity
