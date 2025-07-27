@@ -1,0 +1,83 @@
+blueprint:
+  name: Motion-activated Light or Switch
+  description: Turn on a light or switch when motion is detected, and turn it off after a delay.
+  domain: automation
+  author: your_username
+  source_url: https://github.com/your_username/home-assistant-blueprints/blob/main/motion_light_or_switch.yaml
+  input:
+    motion_entity:
+      name: Motion Sensor
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+              device_class: occupancy
+            - domain: binary_sensor
+              device_class: motion
+    target_entity:
+      name: Light or Switch
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - switch
+    no_motion_wait:
+      name: Wait time
+      description: Time to leave the device on after last motion is detected.
+      default: 120
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  platform: state
+  entity_id: !input motion_entity
+  from: "off"
+  to: "on"
+
+action:
+  - alias: "Turn on the device"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ expand(!input target_entity)[0].domain == 'light' }}"
+        sequence:
+          - service: light.turn_on
+            target: !input target_entity
+      - conditions:
+          - condition: template
+            value_template: "{{ expand(!input target_entity)[0].domain == 'switch' }}"
+        sequence:
+          - service: switch.turn_on
+            target: !input target_entity
+
+  - alias: "Wait until motion stops"
+    wait_for_trigger:
+      platform: state
+      entity_id: !input motion_entity
+      from: "on"
+      to: "off"
+
+  - alias: "Wait for configured delay"
+    delay: !input no_motion_wait
+
+  - alias: "Turn off the device"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ expand(!input target_entity)[0].domain == 'light' }}"
+        sequence:
+          - service: light.turn_off
+            target: !input target_entity
+      - conditions:
+          - condition: template
+            value_template: "{{ expand(!input target_entity)[0].domain == 'switch' }}"
+        sequence:
+          - service: switch.turn_off
+            target: !input target_entity
