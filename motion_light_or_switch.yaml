@@ -3,7 +3,7 @@ blueprint:
   description: Turn on a light or switch when motion is detected, and turn it off after a delay.
   domain: automation
   author: justnick21
-  source_url: https://github.com/justnick21/ha-blueprints/edit/main/motion_light_or_switch.yaml
+  source_url: https://github.com/justnick21/ha-blueprints/edit/main/motion_light_or_switch.yaml=
   input:
     motion_entity:
       name: Motion or Occupancy Sensor
@@ -31,6 +31,22 @@ blueprint:
           min: 0
           max: 3600
           unit_of_measurement: seconds
+    use_sun:
+      name: Enable Sunrise/Sunset Restriction
+      description: Only run the automation after sunset and before sunrise
+      default: false
+      selector:
+        boolean: {}
+    sunrise_offset:
+      name: Sunrise Offset (optional)
+      default: "00:00"
+      selector:
+        text: {}
+    sunset_offset:
+      name: Sunset Offset (optional)
+      default: "00:00"
+      selector:
+        text: {}
 
 mode: restart
 max_exceeded: silent
@@ -40,6 +56,17 @@ trigger:
   entity_id: !input motion_entity
   from: "off"
   to: "on"
+
+condition:
+  - condition: or
+    conditions:
+      - condition: template
+        value_template: "{{ not (use_sun | default(false)) }}"
+      - condition: sun
+        after: sunset
+        after_offset: !input sunset_offset
+        before: sunrise
+        before_offset: !input sunrise_offset
 
 action:
   - alias: "Turn on the device (light or switch)"
